@@ -31,41 +31,38 @@ end
 
 export drawing
 
-@require Compose begin
+using Compose, Gadfly
 
-    # A declarative version of draw?
-    @api drawing => ComposeGraphic <: Tile begin
-        arg(img::Any)
-        curry(graphic::Any) # Either a plot or a compose node
-    end
-    drawing(p) =
-        drawing(Compose.Patchable(Compose.default_graphic_width,
-                        Compose.default_graphic_height), p)
+# A declarative version of draw?
+@api drawing => ComposeGraphic <: Tile begin
+    arg(img::Any)
+    curry(graphic::Any) # Either a plot or a compose node
+end
+drawing(p) =
+    drawing(Compose.Patchable(Compose.default_graphic_width,
+                    Compose.default_graphic_height), p)
 
-    convert(::Type{Tile}, p::Compose.Context) =
-        drawing(p)
+convert(::Type{Tile}, p::Compose.Context) =
+    drawing(p)
 
-    compose_render(img::Compose.Patchable, pic) = begin
-        draw(img, pic)
-    end
-
-    compose_render(img, pic) = begin
-        Compose.draw(img, pic) # do the drawing side-effect
-        Elem(:img, src="""data:image/png;base64,$(base64(takebuf_array(img.out)))""")
-    end
-
-    render(d::ComposeGraphic, state) = begin
-        Elem(:div, compose_render(d.img, d.graphic), className="graphic-wrap")
-    end
-
+compose_render(img::Compose.Patchable, pic) = begin
+    draw(img, pic)
 end
 
-@require Gadfly begin
-    import Gadfly: Compose
-
-    convert(::Type{Tile}, p::Gadfly.Plot) =
-        drawing(p)
+compose_render(img, pic) = begin
+    Compose.draw(img, pic) # do the drawing side-effect
+    Elem(:img, src="""data:image/png;base64,$(base64(takebuf_array(img.out)))""")
 end
+
+render(d::ComposeGraphic, state) = begin
+    Elem(:div, compose_render(d.img, d.graphic), className="graphic-wrap")
+end
+
+
+import Gadfly: Compose
+
+convert(::Type{Tile}, p::Gadfly.Plot) =
+    drawing(p)
 
 @require DataFrames begin
     include(Pkg.dir("Escher", "src", "library", "table.jl"))
